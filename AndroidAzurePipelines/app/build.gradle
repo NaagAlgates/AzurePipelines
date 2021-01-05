@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    File configFile = rootProject.file('signing/signing.properties')
+    /*File configFile = rootProject.file('signing/signing.properties')
     if (configFile.exists()) {
         Properties properties = new Properties()
         properties.load(new FileInputStream(configFile))
@@ -26,7 +26,7 @@ android {
                 v2SigningEnabled true
             }
         }
-    }
+    }*/
     compileSdkVersion 30
     buildToolsVersion "30.0.2"
 
