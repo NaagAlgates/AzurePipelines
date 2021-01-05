@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    File configFile = rootProject.file('signing.config')
+    File configFile = rootProject.file('signing/signing.properties')
     if (configFile.exists()) {
         Properties properties = new Properties()
         properties.load(new FileInputStream(configFile))
