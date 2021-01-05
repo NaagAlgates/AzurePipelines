@@ -48,14 +48,14 @@ android {
             minifyEnabled false
         }
         staging{
-            signingConfig signingConfigs.staging
+            //signingConfig signingConfigs.staging
             applicationIdSuffix '.staging'
             versionNameSuffix '-staging'
             debuggable false
             minifyEnabled false
         }
         release {
-            signingConfig signingConfigs.release
+            //signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
