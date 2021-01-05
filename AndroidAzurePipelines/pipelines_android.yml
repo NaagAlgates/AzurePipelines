@@ -25,20 +25,26 @@ trigger:
 
 stages:
   - stage: 
+    displayName: 'Android ${{ parameters.BuildType }} build'
     jobs:
       - job: 
+        workspace:
+          clean: all      
         pool:
           vmImage: ${{ parameters.OS }}
+
         steps:
           - task: Gradle@2
             displayName: 'Building Project'
             inputs:
+              workingDirectory: ''
               gradleWrapperFile: 'gradlew'
               gradleOptions: '-Xmx3072m'
               publishJUnitResults: false
               testRunTitle: 'InvestorCentreAndroidTest'
               testResultsFiles: '**/TEST-*.xml'
               tasks: assemble${{ parameters.BuildType }}
+              codeCoverageToolOption: 'None'
               javaHomeOption: 'JDKVersion'
               jdkVersionOption: 'default'
               jdkArchitectureOption: 'x64'
