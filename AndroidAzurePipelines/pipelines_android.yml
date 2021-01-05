@@ -1,20 +1,121 @@
-# Android
-# Build your Android project with Gradle.
-# Add steps that test, sign, and distribute the APK, save build artifacts, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/android
+parameters:
+  - name: BuildType
+    displayName: 'Select your build type'
+    default: release
+    values:
+      - debug
+      - staging
+      - release
+
+  - name: OS
+    displayName: Operating System
+    type: string
+    default: windows-latest
+    values:
+      - windows-latest
+      - vs2017-win2016
+      - ubuntu-latest
+      - ubuntu-16.04
+      - macOS-latest
+      - macOS-10.14
 
 trigger:
   - main
 
-pool:
-  vmImage: 'macos-latest'
+variables:
+  - name: 'apkFilePath'
+    value: '**/*${{ parameters.BuildType }}*.apk'
+  - group: AppCenterConfig
 
-steps:
-  - task: Gradle@2
-    inputs:
-      workingDirectory: ''
-      gradleWrapperFile: 'gradlew'
-      gradleOptions: '-Xmx3072m'
-      publishJUnitResults: false
-      testResultsFiles: '**/TEST-*.xml'
-      tasks: 'assembleDebug'
+stages:
+  - stage:
+    displayName: 'Building stage'
+    jobs:
+      - job:
+        displayName: 'Android ${{ parameters.BuildType }} build job'
+        workspace:
+          clean: all
+        variables:
+          - group: Android_${{ parameters.BuildType }}
+        pool:
+          vmImage: ${{ parameters.OS }}
+
+        steps:
+          - task: Gradle@2
+            displayName: 'Building Project'
+            continueOnError: false
+            inputs:
+              workingDirectory: ''
+              gradleWrapperFile: 'gradlew'
+              gradleOptions: '-Xmx3072m'
+              publishJUnitResults: false
+              testRunTitle: 'InvestorCentreAndroidTest'
+              testResultsFiles: '**/TEST-*.xml'
+              tasks: assemble${{ parameters.BuildType }}
+              codeCoverageToolOption: 'None'
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: 'default'
+              jdkArchitectureOption: 'x64'
+              checkStyleRunAnalysis: false
+              findBugsRunAnalysis: false
+
+          - task: AndroidSigning@3
+            continueOnError: false
+            displayName: 'Android Signing'
+            inputs:
+              apkFiles: $(apkFilePath)
+              apksign: true
+              apksignerKeystoreFile: '${{ parameters.BuildType }}.jks'
+              apksignerKeystorePassword: $(apksignerKeystorePassword)
+              apksignerKeystoreAlias: $(apksignerKeystoreAlias)
+              apksignerKeyPassword: $(apksignerKeyPassword)
+              apksignerArguments: '--verbose'
+              zipalign: false
+          - task: CopyFiles@2
+            displayName: 'Copying APK files'
+            continueOnError: false
+            inputs:
+              contents: $(apkFilePath)
+              targetFolder: '$(build.artifactStagingDirectory)'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publishing Artifacts'
+            continueOnError: false
+            inputs:
+              pathtoPublish: '$(Build.artifactStagingDirectory)'
+              ArtifactName: ${{ parameters.BuildType }}
+
+
+  - stage: 
+    displayName: 'Distribution stage'
+    jobs:
+      - job:
+        displayName: 'Android ${{ parameters.BuildType }} distribute job'
+        continueOnError: false
+        variables:
+        - group: AppCenterConfig
+        pool:
+          vmImage: ${{ parameters.OS }}
+        steps:
+        - checkout: none
+        - task: DownloadBuildArtifacts@0
+          continueOnError: false
+          displayName: 'Downloading Published artifacts'
+          inputs:
+            buildType: 'current'
+            downloadType: 'specific'
+            itemPattern: '**/*${{ parameters.BuildType }}*.apk'
+            downloadPath: '$(System.ArtifactsDirectory)'
+
+        - task: AppCenterDistribute@3
+          condition: eq('${{ parameters.BuildType }}', 'release' )
+          continueOnError: false
+          displayName: 'Distributing ${{ parameters.BuildType }} build'
+          inputs:
+            serverEndpoint: MyAppCenterConnection
+            appSlug: '$(appSlug)'
+            appFile: '$(System.ArtifactsDirectory)/${{ parameters.BuildType }}/app/${{ parameters.BuildType }}/*${{ parameters.BuildType }}*.apk'
+            releaseNotesOption: 'input'
+            releaseNotesInput: '$(Build.SourceVersionMessage)'
+            destinationType: 'groups'
+            distributionGroupId: '$(androidStagingTestersGroup)'
