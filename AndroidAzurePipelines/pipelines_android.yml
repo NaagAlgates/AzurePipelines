@@ -23,13 +23,12 @@ trigger:
   - main
 
 
-pool:
-  vmImage: ${{ parameters.OS }}
-
 stages:
   - stage: 
     jobs:
       - job: 
+        pool:
+          vmImage: ${{ parameters.OS }}
         steps:
           - task: Gradle@2
             displayName: 'Building Project'
