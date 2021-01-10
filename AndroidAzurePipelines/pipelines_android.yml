@@ -1,7 +1,7 @@
 parameters:
   - name: BuildType
     displayName: 'Select your build type'
-    default: release
+    default: debug
     values:
       - debug
       - staging
@@ -18,6 +18,11 @@ parameters:
       - ubuntu-16.04
       - macOS-latest
       - macOS-10.14
+
+  - name: CurrentVersion
+    displayName: Enter the current version for this release
+    type: string
+    default: "1.0.1"
 
 trigger:
   - main
@@ -41,6 +46,45 @@ stages:
           vmImage: ${{ parameters.OS }}
 
         steps:
+          - powershell: |
+                $BasePath = "$(Build.SourcesDirectory)"
+                $BuildGradlePath = "${BasePath}appuild.gradle"
+                $BuildGradleUpdatedPath = "${BasePath}appuild.gradle.updated"
+
+                # $File = get-content $BuildGradlePath
+                # foreach ($line in $File){
+                #   Write-Host $line
+                # }
+                $buildNumber = $(Build.BuildNumber).ToString()
+                $buildNumber = $buildNumber.Replace('.', '')
+                $buildNumberLength = $buildNumber.length
+                $buildNumber = $buildNumber.Substring(2, $buildNumberLength-2)
+                Get-Content $BuildGradlePath | ForEach-Object {
+                    if($_ -match "versionCode d"){
+                        #$versionCode = $_ -replace "versionCode", "" -as [int]
+                        $newVersionCode = $buildNumber
+                        
+                        Write-Host "Found versionCode ${versionCode}. Updated to ${newVersionCode}"
+                        
+                        $_ = "        versionCode " + $newVersionCode   
+                    }
+                    elseif($_ -match "versionName"){
+                        Write-Host "Updating versionName to ${{ parameters.CurrentVersion }}"
+                        $_ = "        versionName '${{ parameters.CurrentVersion }}'"
+                    }
+                    $_
+                } | Set-Content $BuildGradleUpdatedPath;
+                Get-Content $BuildGradleUpdatedPath | Set-Content $BuildGradlePath
+                $File = get-content $BuildGradlePath
+                foreach ($line in $File){
+                  Write-Host $line
+                }
+            displayName: 'Set codeName & codeVersion'
+            continueOnError: false
+
+          # - script: echo "##vso[task.setvariable variable=buildGradle]$(cat '$(Build.SourcesDirectory)appuild.gradle')"
+          # - script: echo $(BuildGradlePath)
+          
           - task: Gradle@2
             displayName: 'Building Project'
             continueOnError: false
