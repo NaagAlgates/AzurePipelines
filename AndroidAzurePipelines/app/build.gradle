@@ -4,16 +4,37 @@ plugins {
 }
 
 android {
-    /*File configFile = rootProject.file('signing/signing.properties')
-    if (configFile.exists()) {
+    compileSdkVersion 30
+    buildToolsVersion "30.0.2"
+
+    defaultConfig {
+        applicationId "au.com.nagaraj.androidazurepipelines"
+        minSdkVersion 23
+        targetSdkVersion 30
+        versionCode 2
+        versionName "1.0.1"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    File versionFile = rootProject.file('signing/signing.properties')
+    if (versionFile.exists()) {
         Properties properties = new Properties()
-        properties.load(new FileInputStream(configFile))
+        properties.load(new FileInputStream(versionFile))
         signingConfigs {
             release {
                 storeFile rootProject.file(properties['RELEASE_STORE_FILE'])
                 storePassword properties['RELEASE_STORE_PASSWORD']
                 keyAlias properties['RELEASE_KEY_ALIAS']
                 keyPassword properties['RELEASE_KEY_PASSWORD']
+                v1SigningEnabled true
+                v2SigningEnabled true
+            }
+            debug {
+                storeFile rootProject.file(properties['STAGING_STORE_FILE'])
+                storePassword properties['STAGING_STORE_PASSWORD']
+                keyAlias properties['STAGING_KEY_ALIAS']
+                keyPassword properties['STAGING_KEY_PASSWORD']
                 v1SigningEnabled true
                 v2SigningEnabled true
             }
@@ -26,38 +47,23 @@ android {
                 v2SigningEnabled true
             }
         }
-    }*/
-    compileSdkVersion 30
-    buildToolsVersion "30.0.2"
-
-    defaultConfig {
-        applicationId "au.com.nagaraj.androidazurepipelines"
-        minSdkVersion 23
-        targetSdkVersion 30
-        versionCode 1
-        versionName "1.0"
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
-        debug{
+        debug {
             applicationIdSuffix '.debug'
-            versionNameSuffix '-debug'
             debuggable true
             minifyEnabled false
         }
-        staging{
-            //signingConfig signingConfigs.staging
+        staging {
             applicationIdSuffix '.staging'
-            versionNameSuffix '-staging'
             debuggable false
             minifyEnabled false
         }
         release {
-            //signingConfig signingConfigs.release
+            debuggable false
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
     compileOptions {
