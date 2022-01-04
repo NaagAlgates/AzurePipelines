@@ -93,8 +93,6 @@ stages:
               gradleWrapperFile: 'gradlew'
               gradleOptions: '-Xmx3072m'
               publishJUnitResults: false
-              testRunTitle: 'InvestorCentreAndroidTest'
-              testResultsFiles: '**/TEST-*.xml'
               tasks: assemble${{ parameters.BuildType }}
               codeCoverageToolOption: 'None'
               javaHomeOption: 'JDKVersion'
